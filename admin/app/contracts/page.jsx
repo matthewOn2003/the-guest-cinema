@@ -1,0 +1,196 @@
+"use client";
+
+import { useState } from "react";
+import { Link } from "@/i18n/navigation";
+import { Icon, DataTable, Input, Select, StatusBadge, useToast, PdfPreviewModal } from "@/components/ui";
+import { useDropdown } from "@/hooks/useDropdown";
+import { useDraftFilters } from "@/hooks/useDraftFilters";
+import { apiRequest } from "@/utils/apiRequest";
+import { useLocale } from "@/i18n";
+import { buildContractSummaryPdf, contractRef } from "@/utils/documents";
+import { formatMoney } from "@/utils/format";
+import { apiErrorMessage } from "@/utils/errors";
+
+
+
+async function buildContractPdf(contract) {
+  const tenant = await apiRequest("/tenant/detail", { id: contract.tenant_id }).catch(() => null);
+  return buildContractSummaryPdf(contract, tenant);
+}
+
+export default function ContractsPage() {
+  const { t, locale } = useLocale();
+  const toast = useToast();
+
+  const { draft, setDraft, applied, apply, reset, clear } = useDraftFilters({
+    keyword: "",
+    status: "",
+  });
+
+  const [pdfContract, setPdfContract] = useState(null);
+
+  const { optionsOf, labelOf } = useDropdown(["contract_status"]);
+  const contractStatusItems = optionsOf("contract_status");
+  const statusOptions = [{ value: "", label: t("all_contract_statuses") }, ...contractStatusItems];
+
+  const headerKeys = [
+    "contract_number",
+    "tenant",
+    "property_and_unit",
+    "contract_term",
+    "monthly_rent",
+    "status",
+    "action",
+  ];
+
+  async function activate(contract, reload) {
+    try {
+      await apiRequest("/contract/update", {
+        id: contract.id,
+        tenant_id: contract.tenant_id,
+        start_date: contract.start_date,
+        end_date: contract.end_date,
+        monthly_rent: contract.monthly_rent,
+        security_deposit: contract.security_deposit,
+        billing_day: contract.billing_day,
+        status: "active",
+        notes: contract.notes || "",
+      });
+      toast.success(t("contract_activated"));
+      reload();
+    } catch (error) {
+      toast.error(
+        apiErrorMessage(error, t, {
+          fallbackKey: "contract_save_failed",
+          codes: { ACTIVE_CONTRACT_EXISTS: "contract_active_exists" },
+          serverMessage: false,
+        })
+      );
+    }
+  }
+
+  return (
+    <main className="flex w-full flex-col">
+      <div className="space-y-6 p-4 md:p-8">
+        <DataTable
+          api={"/contract/list"}
+          params={applied}
+          filterValues={draft}
+          filterBadges={[
+            { key: "keyword", label: t("search_keyword") },
+            {
+              key: "status",
+              label: t("status"),
+              display: (value) => labelOf("contract_status", value),
+            },
+          ]}
+          onClearFilter={clear}
+          title={t("contracts")}
+          description={t("contracts_description")}
+          buttons={
+            <Link className="btn btn-primary" href="/contracts/new">
+              <Icon name="add" className="text-lg" />
+              <span>{t("new_contract")}</span>
+            </Link>
+          }
+          filters={
+            <>
+              <Input
+                variant="filter"
+                name="keyword"
+                label={t("search_keyword")}
+                value={draft.keyword}
+                placeholder={t("search_contracts")}
+                onChange={(keyword) => setDraft((current) => ({ ...current, keyword }))}
+              />
+
+              <Select
+                variant="filter"
+                name="status"
+                label={t("status")}
+                value={draft.status}
+                onChange={(status) => setDraft((current) => ({ ...current, status }))}
+                options={statusOptions}
+              />
+            </>
+          }
+          resetFilters={reset}
+          applyFilters={apply}
+          emptyText={t("no_contracts")}
+          header={() => (
+            <tr className="bg-accent font-semibold text-subtle">
+              {headerKeys.map((key) => (
+                <th key={key}>{t(key)}</th>
+              ))}
+            </tr>
+          )}
+          body={({ rows, reload }) =>
+            rows.map((contract) => (
+              <tr className="group" key={contract.id}>
+                <td className="whitespace-nowrap font-semibold">
+                  <Link
+                    href={"/contracts/" + contract.id}
+                    className="link-inline"
+                  >
+                    {contractRef(contract.id)}
+                  </Link>
+                </td>
+                <td>
+                  <div className="font-semibold text-scene-content">{contract.tenant_name}</div>
+                  <div className="text-xs text-subtle">{contract.tenant_phone || "—"}</div>
+                </td>
+                <td>
+                  <div>{contract.property_name || "—"}</div>
+                  <div className="text-xs text-subtle">{contract.unit_code || "—"}</div>
+                </td>
+                <td className="whitespace-nowrap">
+                  {contract.start_date} – {contract.end_date}
+                </td>
+                <td className="whitespace-nowrap font-semibold">
+                  {formatMoney(contract.monthly_rent, locale)}
+                </td>
+                <td>
+                  <StatusBadge value={contract.status} options={contractStatusItems} />
+                </td>
+                <td className="whitespace-nowrap">
+                  <Link
+                    href={"/contracts/" + contract.id}
+                    className="link-inline"
+                  >
+                    {t("view_details")}
+                  </Link>
+                  <button
+                    type="button"
+                    aria-label={t("view_pdf")}
+                    title={t("view_pdf")}
+                    className="ml-3 align-middle text-primary-dark hover:text-scene-content"
+                    onClick={() => setPdfContract(contract)}
+                  >
+                    <Icon name="visibility" className="text-lg" />
+                  </button>
+                  {contract.status === "draft" ? (
+                    <button
+                      type="button"
+                      className="ml-3 link-inline"
+                      onClick={() => activate(contract, reload)}
+                    >
+                      {t("activate_contract")}
+                    </button>
+                  ) : null}
+                </td>
+              </tr>
+            ))
+          }
+        />
+      </div>
+
+      <PdfPreviewModal
+        open={Boolean(pdfContract)}
+        onClose={() => setPdfContract(null)}
+        title={t("lease_agreement_summary")}
+        fileName={pdfContract ? "lease-summary-" + contractRef(pdfContract.id) : "lease-summary"}
+        build={() => buildContractPdf(pdfContract)}
+      />
+    </main>
+  );
+}
