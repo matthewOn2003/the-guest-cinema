@@ -5,8 +5,8 @@ import { ToastProvider } from "@/components/ui";
 import "@/styles/globals.css";
 
 export const metadata: Metadata = {
-  title: "NeighborLink",
-  description: "Tenant portal",
+  title: "The Guest · 座上宾",
+  description: "Guest portal for movie booking",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent, type ReactNode } from "react";
-import { useRouter } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import Image from "next/image";
 import { useLocale } from "@/i18n";
 import { useLoginMutation } from "@/store/authApi";
@@ -49,7 +49,7 @@ export default function Home() {
     setIsLoading(true);
 
     try {
-      await login({ username: form.username, password: form.password, role: "tenant" }).unwrap();
+      await login({ username: form.username, password: form.password }).unwrap();
       router.push("/dashboard");
     } catch (submitError) {
       setError(getErrorMessage(submitError) ?? t("login_failed"));
@@ -72,9 +72,9 @@ export default function Home() {
             <div className="grid h-16 w-16 place-items-center rounded-2xl border border-white/10 bg-gradient-to-br from-surface-container-high to-surface-container-low p-2.5 shadow-inner">
               <Image src="/stitch/logo.png" alt={t("brand_name")} width={44} height={44} className="h-full w-full object-contain" priority />
             </div>
-            <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.2em] text-primary">NeighborLink</p>
-            <h1 className="mt-1.5 text-2xl font-extrabold tracking-tight text-on-surface">{t("portal_login_title")}</h1>
-            <p className="mt-2 text-xs leading-relaxed text-on-surface-variant">{t("portal_login_subtitle")}</p>
+            <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.2em] text-primary">The Guest · 座上宾</p>
+            <h1 className="mt-1.5 text-2xl font-extrabold tracking-tight text-on-surface">Welcome, our guest</h1>
+            <p className="mt-2 text-xs leading-relaxed text-on-surface-variant">Sign in to book your screening and manage your tickets.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="mt-7 flex flex-col gap-4" noValidate>
@@ -119,7 +119,7 @@ export default function Home() {
           </form>
         </div>
 
-        <p className="mt-5 text-center text-xs text-on-surface-variant">{t("portal_login_help")}</p>
+        <p className="mt-5 text-center text-xs text-on-surface-variant">New guest? <Link href="/register" className="font-bold text-primary">Create an account</Link></p>
       </main>
     </div>
   );

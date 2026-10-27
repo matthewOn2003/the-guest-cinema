@@ -5,11 +5,13 @@ import PortalHeader from "./shell/PortalHeader";
 import BottomNav from "./shell/BottomNav";
 import { activeTabFor } from "@/config/menu";
 
+// Pages that render without the app chrome (sign-in and sign-up).
+const BARE_PAGES = new Set(["/", "/register"]);
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  // The login page renders without the app chrome.
-  if (pathname === "/") return <>{children}</>;
+  if (BARE_PAGES.has(pathname)) return <>{children}</>;
 
   const tab = activeTabFor(pathname);
   return (

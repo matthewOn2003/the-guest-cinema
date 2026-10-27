@@ -6,7 +6,8 @@ export function proxy(request) {
   const locale = getLocaleFromPathname(pathname);
   const pagePath = stripLocale(pathname);
 
-  if (pagePath !== "/" && !request.cookies.has("auth_token")) {
+  const PUBLIC_PAGES = ["/", "/register"];
+  if (!PUBLIC_PAGES.includes(pagePath) && !request.cookies.has("auth_token")) {
     return NextResponse.redirect(new URL(localizePath("/", locale), request.url));
   }
 

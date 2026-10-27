@@ -1,12 +1,9 @@
-// The guest portal currently has one tab. Each tab owns the routes listed in `paths`.
+// Guest portal tabs. Each tab owns the routes listed in `paths`.
 export const menu = [
-  {
-    key: "dashboard",
-    labelKey: "portal_nav_home",
-    href: "/dashboard",
-    icon: "home",
-    paths: ["/dashboard"],
-  },
+  { key: "home", label: "Home", href: "/dashboard", icon: "home", paths: ["/dashboard"] },
+  { key: "movies", label: "Movies", href: "/movies", icon: "movie", paths: ["/movies", "/booking"] },
+  { key: "cinemas", label: "Cinemas", href: "/cinemas", icon: "theaters", paths: ["/cinemas"] },
+  { key: "profile", label: "Profile", href: "/profile", icon: "account_circle", paths: ["/profile", "/about"] },
 ];
 
 /** The tab whose routes contain the given pathname (without locale prefix). */
